@@ -1,8 +1,11 @@
 package commandLine;
 
-import personnel.*;
-import commandLineMenus.*;
-import static commandLineMenus.rendering.examples.util.InOut.*;
+import commandLineMenus.Action;
+import commandLineMenus.Menu;
+import commandLineMenus.Option;
+import static commandLineMenus.rendering.examples.util.InOut.getString;
+import personnel.GestionPersonnel;
+import personnel.SauvegardeImpossible;
 
 public class PersonnelConsole
 {

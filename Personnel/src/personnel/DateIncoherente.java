@@ -6,8 +6,8 @@ public class DateIncoherente extends Exception {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public String DateIncoherente() {
-		return "";
+	public DateIncoherente(String message) {
+		super(message);
 	}
 
 }
