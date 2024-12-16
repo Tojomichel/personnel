@@ -91,11 +91,11 @@ class testLigue {
 		assertFalse(ligue.getEmployes().contains(employeJafar));
 	}
 
-	 @Test // test pour vérifier les dates incohérentes
-	 void testDate(){
-		Ligue ligue = gestionPersonnel.addLigue("Fléchettes");
-		assertThrows(DateIncoherente.class, () -> {
-			ligue.addEmploye("Tojo", "Tojo", "tojo@gmail.com", "password046", LocalDate.of(2024, 12, 01), LocalDate.of(2022, 12, 01));
-		});
-	 }
+	@Test // test pour vérifier les dates incohérentes
+	void testDate() throws SauvegardeImpossible{
+	   Ligue ligue = gestionPersonnel.addLigue("Fléchettes");
+	   assertThrows(DateIncoherente.class, () -> {
+		   ligue.addEmploye("Tojo", "Tojo", "tojo@gmail.com", "password046", LocalDate.of(2024, 12, 01), LocalDate.of(2022, 12, 01));
+	   });
+	}
 }
