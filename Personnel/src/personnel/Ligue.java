@@ -139,11 +139,20 @@ public class Ligue implements Serializable, Comparable<Ligue>
 	 * de la ligue.
 	 */
 	
-	public void remove()
-	{
-		gestionPersonnel.remove(this);
-	}
-	
+	public void remove() {
+    if (this.administrateur != null) {
+        Employe root = gestionPersonnel.getRoot();
+        if (this.administrateur != root) {
+            setAdministrateur(root);
+        }
+    }
+    for (Employe employe : employes) {
+        employe.setLigue(null);
+    }
+    for (Employe employe : employes) {
+        gestionPersonnel.removeEmploye(employe);  
+    }
+    gestionPersonnel.remove(this);  
 
 	@Override
 	public int compareTo(Ligue autre)
