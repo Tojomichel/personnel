@@ -14,9 +14,8 @@ import java.util.TreeSet;
  * d'une exécution précédente, c'est l'objet sauvegardé qui est
  * retourné.
  */
-public void update(Ligue ligue) throws SauvegardeImpossible {
-    passerelle.update(ligue);
-}
+public void update(Ligue ligue)throws SauvegardeImpossible{passerelle.update(ligue);}
+
 public class GestionPersonnel implements Serializable {
 	private static final long serialVersionUID = -105283113987886425L;
 	private static GestionPersonnel gestionPersonnel = null;
@@ -75,6 +74,10 @@ public class GestionPersonnel implements Serializable {
 		passerelle.update(employe);
 	}
 
+	public void remove(Employe employe) throws SauvegardeImpossible {
+		passerelle.delete(employe);
+	}
+
 	public Ligue getLigue(Employe administrateur) {
 		if (administrateur.estAdmin(administrateur.getLigue()))
 			return administrateur.getLigue();
@@ -115,14 +118,14 @@ public class GestionPersonnel implements Serializable {
 	int insert(Employe employe) throws SauvegardeImpossible {
 		return passerelle.insert(employe);
 	}
-	
+
 	public void removeEmploye(Employe employe) {
-    try {
-        passerelle.deleteEmploye(employe);
-    } catch (SauvegardeImpossible e) {
-        System.out.println("Erreur lors de la suppression de l'employé : " + e.getMessage());
-    }
-}
+		try {
+			passerelle.deleteEmploye(employe);
+		} catch (SauvegardeImpossible e) {
+			System.out.println("Erreur lors de la suppression de l'employé : " + e.getMessage());
+		}
+	}
 
 	/**
 	 * Retourne le root (super-utilisateur).

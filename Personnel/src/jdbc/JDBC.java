@@ -213,6 +213,21 @@ public class JDBC implements Passerelle {
         }
     }
 
+    @Override
+    public void delete(Employe employe) throws SauvegardeImpossible {
+        try {
+            String requete = "DELETE FROM employe WHERE id = ?";
+            PreparedStatement instruction = connection.prepareStatement(requete);
+
+            instruction.setInt(1, employe.getId());
+
+            instruction.executeUpdate();
+        } catch (SQLException exception) {
+            exception.printStackTrace();
+            throw new SauvegardeImpossible(exception);
+        }
+    }
+
     // changement d'admin dans la BDD
     public void updateAdministrateur(Ligue ligue, Employe nouvelAdmin) throws SauvegardeImpossible {
         try {
