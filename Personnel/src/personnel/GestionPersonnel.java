@@ -25,6 +25,9 @@ public class GestionPersonnel implements Serializable
 			TYPE_PASSERELLE = JDBC;  
 	private static Passerelle passerelle = TYPE_PASSERELLE == JDBC ? new jdbc.JDBC() : new serialisation.Serialization();	
 	
+	public void addRoot(String nom, String motDePasse) {
+		root = new Employe(this, null, nom, "", "", motDePasse, null, null);
+	}
 	/**
 	 * Retourne l'unique instance de cette classe.
 	 * Crée cet objet s'il n'existe déjà.
