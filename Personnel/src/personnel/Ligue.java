@@ -61,6 +61,11 @@ public class Ligue implements Serializable, Comparable<Ligue>
 	public void setNom(String nom)
 	{
 		this.nom = nom;
+		 try {
+            gestionPersonnel.getPasserelle().updateLigue(this);
+        } catch (SauvegardeImpossible e) {
+            System.out.println("Erreur lors de la mise à jour du nom de la ligue : " + e.getMessage());
+        }
 	}
 
 	/**
