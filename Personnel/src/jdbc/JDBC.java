@@ -115,32 +115,39 @@ public class JDBC implements Passerelle
 			throw new SauvegardeImpossible(exception);
 		}		
 	}
-}
 	@Override
-public int insert(Employe employe) throws SauvegardeImpossible 
-{
-    try 
-    {
+public int insert(Employe employe) throws SauvegardeImpossible {
+    try {
         PreparedStatement instruction;
         instruction = connection.prepareStatement(
-            "INSERT INTO employe (nom, prenom, mail, password, idLigue) VALUES (?, ?, ?, ?, ?)", 
+            "INSERT INTO UTILISATEUR (nomUtil, prenomUtil, mailUtil, passwordUtil, date_arrivee, date_depart, idType, numLigue) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
             Statement.RETURN_GENERATED_KEYS
         );
-
-        instruction.setString(1, employe.getNom());
-        instruction.setString(2, employe.getPrenom());
-        instruction.setString(3, employe.getMail());
-        instruction.setString(4, employe.checkPassword(employe.getMail()) ? employe.getMail() : employe.getMail()); // À modifier si besoin
-        instruction.setInt(5, employe.getLigue() != null ? employe.getLigue().getId() : null);
+        
+        // Paramètres de l'utilisateur à insérer
+        instruction.setString(1, employe.getNom()); // nomUtil
+        instruction.setString(2, employe.getPrenom()); // prenomUtil
+        instruction.setString(3, employe.getMail()); // mailUtil
+        instruction.setString(4, employe.checkPassword(employe.getMail()) ? employe.getMail() : employe.getMail()); // passwordUtil (à modifier si besoin)
+        
+        // Dates d'arrivée et de départ
+        instruction.setDate(5, employe.getDateArrivee() != null ? new java.sql.Date(employe.getDateArrivee().getTime()) : null); // date_arrivee
+        instruction.setDate(6, employe.getDateDepart() != null ? new java.sql.Date(employe.getDateDepart().getTime()) : null); // date_depart
+        
+        // Clés étrangères (idType et numLigue)
+        instruction.setInt(7, employe.getType() != null ? employe.getType().getId() : null); // idType
+        instruction.setInt(8, employe.getLigue() != null ? employe.getLigue().getId() : null); // numLigue
 
         instruction.executeUpdate();
+        
+        // Récupérer l'ID généré
         ResultSet id = instruction.getGeneratedKeys();
         id.next();
         return id.getInt(1);
-    } 
-    catch (SQLException exception) 
-    {
+    } catch (SQLException exception) {
         exception.printStackTrace();
         throw new SauvegardeImpossible(exception);
-    }		
+    }
 }
+
