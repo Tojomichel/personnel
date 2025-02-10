@@ -88,9 +88,9 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * @param nom le nouveau nom.
 	 */
 	
-	public void setNom(String nom)
-	{
+	public void setNom(String nom) throws SauvegardeImpossible {
 		this.nom = nom;
+		gestionPersonnel.update(this);
 	}
 
 	/**
@@ -108,9 +108,9 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * @param prenom le nouveau prénom de l'employé. 
 	 */
 
-	public void setPrenom(String prenom)
-	{
+	public void setPrenom(String prenom) throws SauvegardeImpossible {
 		this.prenom = prenom;
+		gestionPersonnel.update(this);
 	}
 
 	/**
@@ -128,9 +128,9 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * @param mail le nouveau mail de l'employé.
 	 */
 
-	public void setMail(String mail)
-	{
+	public void setMail(String mail) throws SauvegardeImpossible {
 		this.mail = mail;
+		gestionPersonnel.update(this);
 	}
 
 	/**
@@ -151,9 +151,9 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * @param password le nouveau password de l'employé. 
 	 */
 	
-	public void setPassword(String password)
-	{
-		this.password= password;
+	public void setPassword(String password) throws SauvegardeImpossible {
+		this.password = password;
+		gestionPersonnel.update(this);
 	}
 
 	/**
@@ -171,17 +171,19 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * récupère les droits d'administration sur sa ligue.
 	 */
 	
-	public void setDateArrivee(LocalDate dateArrivee) {
+	public void setDateArrivee(LocalDate dateArrivee) throws SauvegardeImpossible {
 		this.dateArrivee = dateArrivee;
-	} // permet d'assigner une valeur de type date pour la date d'arrivée
+		gestionPersonnel.update(this);
+	}
 	
 	public LocalDate getDateArrivee() {
 		return dateArrivee;
 	} // permet d'obtenir la date d'arrivée
 	
-	public void setDateDepart(LocalDate dateDepart) {
+	public void setDateDepart(LocalDate dateDepart) throws SauvegardeImpossible {
 		this.dateDepart = dateDepart;
-	} // permet d'assigner une valeur de type date pour la date de départ
+		gestionPersonnel.update(this);
+	}
 	
 	public LocalDate getDateDepart() {
 		return dateDepart;
