@@ -46,11 +46,29 @@ public class JDBC implements Passerelle
 		GestionPersonnel gestionPersonnel = new GestionPersonnel();
 		try 
 		{
-			String requete = "select * from ligue";
-			Statement instruction = connection.createStatement();
-			ResultSet ligues = instruction.executeQuery(requete);
+			// Charger les ligues depuis la base de données
+			String requeteLigue = "SELECT * FROM LIGUE";
+			Statement instructionLigue = connection.createStatement();
+			ResultSet ligues = instructionLigue.executeQuery(requeteLigue);
 			while (ligues.next())
-				gestionPersonnel.addLigue(ligues.getInt(1), ligues.getString(2));
+				gestionPersonnel.addLigue(ligues.getInt("numLigue"), ligues.getString("nom"));
+	
+			// Charger l'utilisateur root depuis la base de données
+			String requeteRoot = "SELECT * FROM UTILISATEUR WHERE idType = 1"; //idType de root (exemple)
+			Statement instructionRoot = connection.createStatement();
+			ResultSet rootResult = instructionRoot.executeQuery(requeteRoot);
+	
+			if (rootResult.next()) {
+				// Instancier le root avec les données récupérées
+				String nom = rootResult.getString("nomUtil");
+				String prenom = rootResult.getString("prenomUtil");
+				String mail = rootResult.getString("mailUtil");
+				String password = rootResult.getString("passwordUtil");
+	
+				// Créer un objet Employe pour le root et l'affecter à la gestion du personnel
+				Employe root = new Employe(gestionPersonnel, null, nom, prenom, mail, password);
+				gestionPersonnel.setRoot(root);
+			}
 		}
 		catch (SQLException e)
 		{
