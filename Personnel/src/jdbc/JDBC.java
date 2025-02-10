@@ -29,6 +29,16 @@ public class JDBC implements Passerelle
 			System.out.println(e);
 		}
 	}
+
+	public interface Passerelle {
+		public GestionPersonnel getGestionPersonnel();
+
+		public void sauvegarderGestionPersonnel(GestionPersonnel gestionPersonnel) throws SauvegardeImpossible;
+
+		public int insert(Ligue ligue) throws SauvegardeImpossible;
+
+		public void update(Employe employe) throws SauvegardeImpossible;
+	}
 	
 	@Override
 	public GestionPersonnel getGestionPersonnel() 
