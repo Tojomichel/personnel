@@ -197,4 +197,28 @@ public void update(Ligue ligue) throws SauvegardeImpossible {
     }
 }
 
+// changement d'admin dans la BDD
+public void updateAdministrateur(Ligue ligue, Employe nouvelAdmin) throws SauvegardeImpossible {
+	try {
+		// Étape 1 : Désactiver l'ancien administrateur de la ligue
+		String resetAdminSQL = "UPDATE UTILISATEUR SET idType = 3 WHERE numLigue = ? AND idType = 2";
+		PreparedStatement resetAdminStmt = connection.prepareStatement(resetAdminSQL);
+		resetAdminStmt.setInt(1, ligue.getId());
+		resetAdminStmt.executeUpdate();
+
+		// Étape 2 : Nommer le nouvel administrateur
+		String updateAdminSQL = "UPDATE UTILISATEUR SET idType = 2 WHERE idUtilisateur = ?";
+		PreparedStatement updateAdminStmt = connection.prepareStatement(updateAdminSQL);
+		updateAdminStmt.setInt(1, nouvelAdmin.getId());
+		updateAdminStmt.executeUpdate();
+		
+		// Étape 3 : Mettre à jour l'objet en mémoire
+		ligue.setAdministrateur(nouvelAdmin);
+	} 
+	catch (SQLException e) {
+		throw new SauvegardeImpossible(e);
+	}
+}
+}
+
 
