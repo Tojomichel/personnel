@@ -115,6 +115,14 @@ public class GestionPersonnel implements Serializable {
 	int insert(Employe employe) throws SauvegardeImpossible {
 		return passerelle.insert(employe);
 	}
+	
+	public void removeEmploye(Employe employe) {
+    try {
+        passerelle.deleteEmploye(employe);
+    } catch (SauvegardeImpossible e) {
+        System.out.println("Erreur lors de la suppression de l'employé : " + e.getMessage());
+    }
+}
 
 	/**
 	 * Retourne le root (super-utilisateur).
