@@ -1,7 +1,6 @@
 package personnel;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 
 /**
  * Employé d'une ligue hébergée par la M2L. Certains peuvent 
@@ -14,25 +13,40 @@ import java.time.LocalDate;
 public class Employe implements Serializable, Comparable<Employe>
 {
 	private static final long serialVersionUID = 4795721718037994734L;
+	private int id; // Ajout de la variable d'instance id
 	private String nom, prenom, password, mail;
 	private Ligue ligue;
 	private GestionPersonnel gestionPersonnel;
-	private LocalDate dateArrivee;
-	private LocalDate dateDepart;
 	
-	
-	public Employe(GestionPersonnel gestionPersonnel, Ligue ligue, String nom, String prenom, String mail, String password, LocalDate dateArrivee, LocalDate dateDepart)
+	Employe(GestionPersonnel gestionPersonnel, Ligue ligue, int id, String nom, String prenom, String mail, String password)
 	{
 		this.gestionPersonnel = gestionPersonnel;
+		this.id = id;
 		this.nom = nom;
 		this.prenom = prenom;
 		this.password = password;
 		this.mail = mail;
 		this.ligue = ligue;
-		this.dateArrivee = dateArrivee;
-		this.dateDepart = dateDepart;
 	}
 	
+	/**
+	 * Retourne l'identifiant de l'employé.
+	 * @return l'identifiant de l'employé.
+	 */
+	public int getId()
+	{
+		return id;
+	}
+
+	/**
+	 * Définit l'identifiant de l'employé.
+	 * @param id le nouvel identifiant de l'employé.
+	 */
+	public void setId(int id)
+	{
+		this.id = id;
+	}
+
 	/**
 	 * Retourne vrai ssi l'employé est administrateur de la ligue 
 	 * passée en paramètre.
@@ -41,7 +55,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * @param ligue la ligue pour laquelle on souhaite vérifier si this 
 	 * est l'admininstrateur.
 	 */
-	
 	public boolean estAdmin(Ligue ligue)
 	{
 		return ligue.getAdministrateur() == this;
@@ -51,7 +64,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Retourne vrai ssi l'employé est le root.
 	 * @return vrai ssi l'employé est le root.
 	 */
-	
 	public boolean estRoot()
 	{
 		return gestionPersonnel.getRoot() == this;
@@ -61,7 +73,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Retourne le nom de l'employé.
 	 * @return le nom de l'employé. 
 	 */
-	
 	public String getNom()
 	{
 		return nom;
@@ -71,7 +82,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Change le nom de l'employé.
 	 * @param nom le nouveau nom.
 	 */
-	
 	public void setNom(String nom)
 	{
 		this.nom = nom;
@@ -81,7 +91,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Retourne le prénom de l'employé.
 	 * @return le prénom de l'employé.
 	 */
-	
 	public String getPrenom()
 	{
 		return prenom;
@@ -91,7 +100,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Change le prénom de l'employé.
 	 * @param prenom le nouveau prénom de l'employé. 
 	 */
-
 	public void setPrenom(String prenom)
 	{
 		this.prenom = prenom;
@@ -101,7 +109,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Retourne le mail de l'employé.
 	 * @return le mail de l'employé.
 	 */
-	
 	public String getMail()
 	{
 		return mail;
@@ -111,7 +118,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Change le mail de l'employé.
 	 * @param mail le nouveau mail de l'employé.
 	 */
-
 	public void setMail(String mail)
 	{
 		this.mail = mail;
@@ -124,7 +130,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * de l'employé.
 	 * @param password le password auquel comparer celui de l'employé.
 	 */
-	
 	public boolean checkPassword(String password)
 	{
 		return this.password.equals(password);
@@ -134,7 +139,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Change le password de l'employé.
 	 * @param password le nouveau password de l'employé. 
 	 */
-	
 	public void setPassword(String password)
 	{
 		this.password= password;
@@ -144,7 +148,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Retourne la ligue à laquelle l'employé est affecté.
 	 * @return la ligue à laquelle l'employé est affecté.
 	 */
-	
 	public Ligue getLigue()
 	{
 		return ligue;
@@ -154,23 +157,6 @@ public class Employe implements Serializable, Comparable<Employe>
 	 * Supprime l'employé. Si celui-ci est un administrateur, le root
 	 * récupère les droits d'administration sur sa ligue.
 	 */
-	
-	public void setDateArrivee(LocalDate dateArrivee) {
-		this.dateArrivee = dateArrivee;
-	} // permet d'assigner une valeur de type date pour la date d'arrivée
-	
-	public LocalDate getDateArrivee() {
-		return dateArrivee;
-	} // permet d'obtenir la date d'arrivée
-	
-	public void setDateDepart(LocalDate dateDepart) {
-		this.dateDepart = dateDepart;
-	} // permet d'assigner une valeur de type date pour la date de départ
-	
-	public LocalDate getDateDepart() {
-		return dateDepart;
-	} // permet d'obtenir la date de départ
-	
 	public void remove()
 	{
 		Employe root = gestionPersonnel.getRoot();
@@ -196,14 +182,13 @@ public class Employe implements Serializable, Comparable<Employe>
 	@Override
 	public String toString()
 	{
-		String res = nom + " " + prenom + " " + mail;
-		 res += " Date d'arrivée: " + dateArrivee.toString() +
-		           " Date de départ: " + dateDepart.toString() + ", ";
-
+		String res = id + " - " + nom + " " + prenom + " " + mail + " ("; // Ajout de l'id dans le toString
 		if (estRoot())
 			res += "super-utilisateur";
 		else
-			res += " (" + ligue.toString();
+			res += ligue.toString();
 		return res + ")";
+	}
+}
 	}
 }
