@@ -61,6 +61,10 @@ public class GestionPersonnel implements Serializable
 	 * @param administrateur l'administrateur de la ligue recherchée.
 	 * @return la ligue dont administrateur est l'administrateur.
 	 */
+
+	public void update(Employe employe) throws SauvegardeImpossible {
+		passerelle.update(employe);
+	}
 	
 	public Ligue getLigue(Employe administrateur)
 	{
