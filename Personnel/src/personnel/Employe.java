@@ -175,6 +175,14 @@ public class Employe implements Serializable, Comparable<Employe>
 		return ligue;
 	}
 
+	public void setLigue(Ligue ligue) {
+    this.ligue = ligue;
+    try {
+        gestionPersonnel.getPasserelle().updateLigue(this);
+    } catch (SauvegardeImpossible e) {
+        System.out.println("Erreur lors de la mise à jour de la ligue de l'employé : " + e.getMessage());
+    }
+}
 	/**
 	 * Supprime l'employé. Si celui-ci est un administrateur, le root
 	 * récupère les droits d'administration sur sa ligue.
