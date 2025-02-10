@@ -41,42 +41,71 @@ public class JDBC implements Passerelle
 	}
 	
 	@Override
-	public GestionPersonnel getGestionPersonnel() 
-	{
-		GestionPersonnel gestionPersonnel = new GestionPersonnel();
-		try 
-		{
-			// Charger les ligues depuis la base de données
-			String requeteLigue = "SELECT * FROM LIGUE";
-			Statement instructionLigue = connection.createStatement();
-			ResultSet ligues = instructionLigue.executeQuery(requeteLigue);
-			while (ligues.next())
-				gestionPersonnel.addLigue(ligues.getInt("numLigue"), ligues.getString("nom"));
-	
-			// Charger l'utilisateur root depuis la base de données
-			String requeteRoot = "SELECT * FROM UTILISATEUR WHERE idType = 1"; //idType de root (exemple)
-			Statement instructionRoot = connection.createStatement();
-			ResultSet rootResult = instructionRoot.executeQuery(requeteRoot);
-	
-			if (rootResult.next()) {
-				// Instancier le root avec les données récupérées
-				String nom = rootResult.getString("nomUtil");
-				String prenom = rootResult.getString("prenomUtil");
-				String mail = rootResult.getString("mailUtil");
-				String password = rootResult.getString("passwordUtil");
-	
-				// Créer un objet Employe pour le root et l'affecter à la gestion du personnel
-				Employe root = new Employe(gestionPersonnel, null, nom, prenom, mail, password);
-				gestionPersonnel.setRoot(root);
-			}
-		}
-		catch (SQLException e)
-		{
-			System.out.println(e);
-		}
-		return gestionPersonnel;
-	}
+public GestionPersonnel getGestionPersonnel() 
+{
+    GestionPersonnel gestionPersonnel = new GestionPersonnel();
+    try 
+    {
+        // Charger les ligues depuis la base de données
+        String requeteLigue = "SELECT * FROM LIGUE";
+        Statement instructionLigue = connection.createStatement();
+        ResultSet ligues = instructionLigue.executeQuery(requeteLigue);
 
+        while (ligues.next()) {
+            int idLigue = ligues.getInt("numLigue");
+            String nomLigue = ligues.getString("nom");
+            Ligue ligue = gestionPersonnel.addLigue(idLigue, nomLigue);
+
+            // Récupérer l'administrateur de la ligue (idType = 2)
+            String requeteAdmin = "SELECT * FROM UTILISATEUR WHERE numLigue = ? AND idType = 2";
+            PreparedStatement instructionAdmin = connection.prepareStatement(requeteAdmin);
+            instructionAdmin.setInt(1, idLigue);
+            ResultSet adminResult = instructionAdmin.executeQuery();
+
+            if (adminResult.next()) {
+                int idAdmin = adminResult.getInt("idUtilisateur");
+                String nom = adminResult.getString("nomUtil");
+                String prenom = adminResult.getString("prenomUtil");
+                String mail = adminResult.getString("mailUtil");
+                String password = adminResult.getString("passwordUtil");
+                LocalDate dateArrivee = adminResult.getDate("date_arrivee") != null ?
+                        adminResult.getDate("date_arrivee").toLocalDate() : null;
+                LocalDate dateDepart = adminResult.getDate("date_depart") != null ?
+                        adminResult.getDate("date_depart").toLocalDate() : null;
+
+                // Créer l'employé et l'affecter comme administrateur
+                Employe admin = new Employe(gestionPersonnel, idAdmin, ligue, nom, prenom, mail, password, dateArrivee, dateDepart);
+                ligue.setAdministrateur(admin);
+            }
+        }
+
+        // Charger l'utilisateur root depuis la base de données (idType = 1)
+        String requeteRoot = "SELECT * FROM UTILISATEUR WHERE idType = 1";
+        Statement instructionRoot = connection.createStatement();
+        ResultSet rootResult = instructionRoot.executeQuery(requeteRoot);
+
+        if (rootResult.next()) {
+            int idRoot = rootResult.getInt("idUtilisateur");
+            String nom = rootResult.getString("nomUtil");
+            String prenom = rootResult.getString("prenomUtil");
+            String mail = rootResult.getString("mailUtil");
+            String password = rootResult.getString("passwordUtil");
+            LocalDate dateArrivee = rootResult.getDate("date_arrivee") != null ?
+                    rootResult.getDate("date_arrivee").toLocalDate() : null;
+            LocalDate dateDepart = rootResult.getDate("date_depart") != null ?
+                    rootResult.getDate("date_depart").toLocalDate() : null;
+
+            // Créer un objet Employe pour le root et l'affecter à la gestion du personnel
+            Employe root = new Employe(gestionPersonnel, idRoot, null, nom, prenom, mail, password, dateArrivee, dateDepart);
+            gestionPersonnel.setRoot(root);
+        }
+    }
+    catch (SQLException e)
+    {
+        System.out.println(e);
+    }
+    return gestionPersonnel;
+}
 	@Override
 	public void sauvegarderGestionPersonnel(GestionPersonnel gestionPersonnel) throws SauvegardeImpossible 
 	{
