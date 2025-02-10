@@ -14,7 +14,9 @@ import java.util.TreeSet;
  * d'une exécution précédente, c'est l'objet sauvegardé qui est
  * retourné.
  */
-
+public void update(Ligue ligue) throws SauvegardeImpossible {
+    passerelle.update(ligue);
+}
 public class GestionPersonnel implements Serializable {
 	private static final long serialVersionUID = -105283113987886425L;
 	private static GestionPersonnel gestionPersonnel = null;
