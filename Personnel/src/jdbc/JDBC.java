@@ -1,252 +1,296 @@
 package jdbc;
 
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 
+ // import personnel.GestionPersonnel;
 import personnel.*;
+import personnel.Ligue; // Ajout de l'import pour Credentials
+import personnel.Passerelle;
+import personnel.SauvegardeImpossible;
+import personnel.Employe;
 
-public class JDBC implements Passerelle {
-    Connection connection;
+public class JDBC implements Passerelle 
+{
+	Connection connection;
 
-    public JDBC() {
-        try {
-            Class.forName(Credentials.getDriverClassName());
-            connection = DriverManager.getConnection(Credentials.getUrl(), Credentials.getUser(),
-                    Credentials.getPassword());
-        } catch (ClassNotFoundException e) {
-            System.out.println("Pilote JDBC non installé.");
-        } catch (SQLException e) {
-            System.out.println(e);
-        }
-    }
+	public JDBC()
+	{
+		try
+		{
+			Class.forName(Credentials.getDriverClassName());
+			connection = DriverManager.getConnection(Credentials.getUrl(), Credentials.getUser(), Credentials.getPassword());
+		}
+		catch (ClassNotFoundException e)
+		{
+			System.out.println("Pilote JDBC non installé.");
+		}
+		catch (SQLException e)
+		{
+			System.out.println(e);
+		}
+	}
+	
+	@Override
+	public GestionPersonnel getGestionPersonnel() 
+	{
+		GestionPersonnel gestionPersonnel = new GestionPersonnel();
+		try 
+		{
+			// Lecture du root dans la base de données
+						String requeteRoot = "SELECT * FROM utilisateur WHERE admin = 1 LIMIT 1";
+						Statement instructionRoot = connection.createStatement();
+						ResultSet resultRoot = instructionRoot.executeQuery(requeteRoot);
+						if (resultRoot.next()) {
+							LocalDate dateArrivee = resultRoot.getDate("date_arrivee") != null ? 
+								resultRoot.getDate("date_arrivee").toLocalDate() : null;
+							LocalDate dateDepart = resultRoot.getDate("date_depart") != null ? 
+								resultRoot.getDate("date_depart").toLocalDate() : null;
+								
+							gestionPersonnel.addRoot(
+								resultRoot.getInt("idUtilisateur"),
+								resultRoot.getString("nomUtil"),
+								resultRoot.getString("prenomUtil"),
+								resultRoot.getString("mailUtil"),
+								resultRoot.getString("passwordUtil"),
+								dateArrivee,
+								dateDepart
+							);
+						}
 
-    public interface Passerelle {
-        public GestionPersonnel getGestionPersonnel();
+						// Lecture des ligues
+						String requeteLigues = "SELECT * FROM ligue";
+						Statement instructionLigues = connection.createStatement();
+						ResultSet resultLigues = instructionLigues.executeQuery(requeteLigues);
+						while (resultLigues.next()) {
+							int idLigue = resultLigues.getInt("numLigue");
+							String nomLigue = resultLigues.getString("nomLigue");
+							Ligue ligue = gestionPersonnel.addLigue(idLigue, nomLigue);
 
-        public void sauvegarderGestionPersonnel(GestionPersonnel gestionPersonnel) throws SauvegardeImpossible;
+							// Lecture de l'administrateur de la ligue
+							String requeteAdmin = "SELECT * FROM utilisateur WHERE numLigue = ? AND admin = 1";
+							PreparedStatement instructionAdmin = connection.prepareStatement(requeteAdmin);
+							instructionAdmin.setInt(1, idLigue);
+							ResultSet resultAdmin = instructionAdmin.executeQuery();
+							
+							if (resultAdmin.next()) {
+								LocalDate dateArriveeAdmin = resultAdmin.getDate("date_arrivee") != null ? 
+									resultAdmin.getDate("date_arrivee").toLocalDate() : null;
+								LocalDate dateDepartAdmin = resultAdmin.getDate("date_depart") != null ? 
+									resultAdmin.getDate("date_depart").toLocalDate() : null;
 
-        public int insert(Ligue ligue) throws SauvegardeImpossible;
+								Employe admin = ligue.addEmploye(
+									resultAdmin.getInt("idUtilisateur"),
+									resultAdmin.getString("nomUtil"),
+									resultAdmin.getString("prenomUtil"),
+									resultAdmin.getString("mailUtil"),
+									resultAdmin.getString("passwordUtil"),
+									dateArriveeAdmin,
+									dateDepartAdmin
+								);
+								ligue.setAdministrateur(admin);
+							}
 
-        public void update(Employe employe) throws SauvegardeImpossible;
-    }
+							// Lecture des employés non administrateurs de la ligue
+							String requeteEmployes = "SELECT * FROM utilisateur WHERE numLigue = ? AND admin = 0";
+							PreparedStatement instructionEmployes = connection.prepareStatement(requeteEmployes);
+							instructionEmployes.setInt(1, idLigue);
+							ResultSet resultEmployes = instructionEmployes.executeQuery();
+							
+							while (resultEmployes.next()) {
+								LocalDate dateArriveeEmp = resultEmployes.getDate("date_arrivee") != null ? 
+									resultEmployes.getDate("date_arrivee").toLocalDate() : null;
+								LocalDate dateDepartEmp = resultEmployes.getDate("date_depart") != null ? 
+									resultEmployes.getDate("date_depart").toLocalDate() : null;
 
-    @Override
-    public GestionPersonnel getGestionPersonnel() {
-        GestionPersonnel gestionPersonnel = new GestionPersonnel();
-        try {
-            // Charger les ligues depuis la base de données
-            String requeteLigue = "SELECT * FROM LIGUE";
-            Statement instructionLigue = connection.createStatement();
-            ResultSet ligues = instructionLigue.executeQuery(requeteLigue);
+								ligue.addEmploye(
+									resultEmployes.getInt("idUtilisateur"),
+									resultEmployes.getString("nomUtil"),
+									resultEmployes.getString("prenomUtil"),
+									resultEmployes.getString("mailUtil"),
+									resultEmployes.getString("passwordUtil"),
+									dateArriveeEmp,
+									dateDepartEmp
+								);
+							}
+						}
+		}
+		catch (SQLException e)
+		{
+			System.out.println(e);
+		}
+		return gestionPersonnel;
+	}
 
-            while (ligues.next()) {
-                int idLigue = ligues.getInt("numLigue");
-                String nomLigue = ligues.getString("nom");
-                Ligue ligue = gestionPersonnel.addLigue(idLigue, nomLigue);
+	@Override
+	public void sauvegarderGestionPersonnel(GestionPersonnel gestionPersonnel) throws SauvegardeImpossible 
+	{
+		close();
+	}
+	
+	public void close() throws SauvegardeImpossible
+	{
+		try
+		{
+			if (connection != null)
+				connection.close();
+		}
+		catch (SQLException e)
+		{
+			throw new SauvegardeImpossible(e);
+		}
+	}
+	
+	@Override
+	public int insert(Ligue ligue) throws SauvegardeImpossible 
+	{
+		try 
+		{
+			PreparedStatement instruction;
+			instruction = connection.prepareStatement("insert into ligue (nomLigue) values(?)", Statement.RETURN_GENERATED_KEYS);
+			instruction.setString(1, ligue.getNom());		
+			instruction.executeUpdate();
+			ResultSet id = instruction.getGeneratedKeys();
+			id.next();
+			return id.getInt(1);
+		} 
+		catch (SQLException exception) 
+		{
+			exception.printStackTrace();
+			throw new SauvegardeImpossible(exception);
+		}		
+	}
 
-                // Récupérer l'administrateur de la ligue (idType = 2)
-                String requeteAdmin = "SELECT * FROM UTILISATEUR WHERE numLigue = ? AND idType = 2";
-                PreparedStatement instructionAdmin = connection.prepareStatement(requeteAdmin);
-                instructionAdmin.setInt(1, idLigue);
-                ResultSet adminResult = instructionAdmin.executeQuery();
+	@Override
+	public int insert(Employe employe) throws SauvegardeImpossible 
+	{
+		try 
+		{
+			PreparedStatement instruction = connection.prepareStatement(
+				"INSERT INTO utilisateur (nomUtil, prenomUtil, mailUtil, passwordUtil, date_arrivee, date_depart, numLigue, admin) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+				Statement.RETURN_GENERATED_KEYS);
+			instruction.setString(1, employe.getNom());
+			instruction.setString(2, employe.getPrenom());
+			instruction.setString(3, employe.getMail());
+			instruction.setString(4, employe.getPassword());
+            instruction.setDate(5, employe.getDateArrivee() != null ? java.sql.Date.valueOf(employe.getDateArrivee()) : null);
+            instruction.setDate(6, employe.getDateDepart() != null ? java.sql.Date.valueOf(employe.getDateDepart()) : null);
+			instruction.setInt(7, employe.getLigue().getIdLigue());
+			instruction.setBoolean(8, employe.estAdmin(employe.getLigue()));
+			instruction.executeUpdate();
+			ResultSet id = instruction.getGeneratedKeys();
+			id.next();
+			return id.getInt(1);
+		} 
+		catch (SQLException exception) 
+		{
+			exception.printStackTrace();
+			throw new SauvegardeImpossible(exception);
+		}
+	}
+	
+	@Override
+	public void update(Ligue ligue) throws SauvegardeImpossible 
+	{
+		try 
+		{
+			PreparedStatement instruction;
+			instruction = connection.prepareStatement("UPDATE ligue SET nomLigue = ? WHERE numLigue = ?");
+			instruction.setString(1, ligue.getNom());
+			instruction.setInt(2, ligue.getIdLigue());
+			instruction.executeUpdate();
+			// Mise à jour des droits d'administrateur
+			// D'abord, on retire les droits d'admin à tous les employés de la ligue
+			PreparedStatement resetAdmin = connection.prepareStatement(
+				"UPDATE utilisateur SET admin = 0 WHERE numLigue = ?");
+			resetAdmin.setInt(1, ligue.getIdLigue());
+			resetAdmin.executeUpdate();
 
-                if (adminResult.next()) {
-                    int idAdmin = adminResult.getInt("idUtilisateur");
-                    String nom = adminResult.getString("nomUtil");
-                    String prenom = adminResult.getString("prenomUtil");
-                    String mail = adminResult.getString("mailUtil");
-                    String password = adminResult.getString("passwordUtil");
-                    LocalDate dateArrivee = adminResult.getDate("date_arrivee") != null
-                            ? adminResult.getDate("date_arrivee").toLocalDate()
-                            : null;
-                    LocalDate dateDepart = adminResult.getDate("date_depart") != null
-                            ? adminResult.getDate("date_depart").toLocalDate()
-                            : null;
+			// On définit le nouvel administrateur
+			if (ligue.getAdministrateur() != null && !ligue.getAdministrateur().estRoot())
+			{
+				PreparedStatement setAdmin = connection.prepareStatement(
+					"UPDATE utilisateur SET admin = 1 WHERE idUtilisateur = ?");
+				setAdmin.setInt(1, ligue.getAdministrateur().getId());
+				setAdmin.executeUpdate();
+			}
+		} 
+		catch (SQLException exception) 
+		{
+			exception.printStackTrace();
+			throw new SauvegardeImpossible(exception);
+		}       
+	}
+	
+	@Override
+	public void update(Employe employe) throws SauvegardeImpossible 
+	{
+		try 
+		{
+			PreparedStatement instruction = connection.prepareStatement(
+				"UPDATE utilisateur SET nomUtil = ?, prenomUtil = ?, mailUtil = ?, passwordUtil = ?, " +
+				"date_arrivee = ?, date_depart = ?, numLigue = ?, admin = ? WHERE idUtilisateur = ?");
+			instruction.setString(1, employe.getNom());
+			instruction.setString(2, employe.getPrenom());
+			instruction.setString(3, employe.getMail());
+			instruction.setString(4, employe.getPassword());
+			instruction.setDate(5, employe.getDateArrivee() != null ? java.sql.Date.valueOf(employe.getDateArrivee()) : null);
+			instruction.setDate(6, employe.getDateDepart() != null ? java.sql.Date.valueOf(employe.getDateDepart()) : null);
+			instruction.setObject(7, employe.getLigue() != null ? employe.getLigue().getIdLigue() : null);
+			instruction.setBoolean(8, employe.estRoot());
+			instruction.setInt(9, employe.getId());
+			instruction.executeUpdate();
+		} 
+		catch (SQLException exception) 
+		{
+			exception.printStackTrace();
+			throw new SauvegardeImpossible(exception);
+		}
+	}
+	
+	@Override
+	public void delete(Employe employe) throws SauvegardeImpossible 
+	{
+		try 
+		{
+			PreparedStatement instruction = connection.prepareStatement(
+				"DELETE FROM utilisateur WHERE idUtilisateur = ?");
+			instruction.setInt(1, employe.getId());
+			instruction.executeUpdate();
+		} 
+		catch (SQLException exception) 
+		{
+			exception.printStackTrace();
+			throw new SauvegardeImpossible(exception);
+		}
+	}
+	
+	@Override
+	public void delete(Ligue ligue) throws SauvegardeImpossible 
+	{
+		try 
+		{
+			// D'abord, supprimer tous les employés de la ligue
+			PreparedStatement deleteEmployes = connection.prepareStatement(
+				"DELETE FROM utilisateur WHERE numLigue = ?");
+			deleteEmployes.setInt(1, ligue.getIdLigue());
+			deleteEmployes.executeUpdate();
 
-                    // Créer l'employé et l'affecter comme administrateur
-                    Employe admin = new Employe(gestionPersonnel, idAdmin, ligue, nom, prenom, mail, password,
-                            dateArrivee, dateDepart);
-                    ligue.setAdministrateur(admin);
-                }
-            }
-
-            // Charger l'utilisateur root depuis la base de données (idType = 1)
-            String requeteRoot = "SELECT * FROM UTILISATEUR WHERE idType = 1";
-            Statement instructionRoot = connection.createStatement();
-            ResultSet rootResult = instructionRoot.executeQuery(requeteRoot);
-
-            if (rootResult.next()) {
-                int idRoot = rootResult.getInt("idUtilisateur");
-                String nom = rootResult.getString("nomUtil");
-                String prenom = rootResult.getString("prenomUtil");
-                String mail = rootResult.getString("mailUtil");
-                String password = rootResult.getString("passwordUtil");
-                LocalDate dateArrivee = rootResult.getDate("date_arrivee") != null
-                        ? rootResult.getDate("date_arrivee").toLocalDate()
-                        : null;
-                LocalDate dateDepart = rootResult.getDate("date_depart") != null
-                        ? rootResult.getDate("date_depart").toLocalDate()
-                        : null;
-
-                // Créer un objet Employe pour le root et l'affecter à la gestion du personnel
-                Employe root = new Employe(gestionPersonnel, idRoot, null, nom, prenom, mail, password, dateArrivee,
-                        dateDepart);
-                gestionPersonnel.setRoot(root);
-            }
-        } catch (SQLException e) {
-            System.out.println(e);
-        }
-        return gestionPersonnel;
-    }
-
-    @Override
-    public void sauvegarderGestionPersonnel(GestionPersonnel gestionPersonnel) throws SauvegardeImpossible {
-        close();
-    }
-
-    public void close() throws SauvegardeImpossible {
-        try {
-            if (connection != null)
-                connection.close();
-        } catch (SQLException e) {
-            throw new SauvegardeImpossible(e);
-        }
-    }
-
-    @Override
-    public int insert(Ligue ligue) throws SauvegardeImpossible {
-        try {
-            PreparedStatement instruction;
-            instruction = connection.prepareStatement("insert into ligue (nom) values(?)",
-                    Statement.RETURN_GENERATED_KEYS);
-            instruction.setString(1, ligue.getNom());
-            instruction.executeUpdate();
-            ResultSet id = instruction.getGeneratedKeys();
-            id.next();
-            return id.getInt(1);
-        } catch (SQLException exception) {
-            exception.printStackTrace();
-            throw new SauvegardeImpossible(exception);
-        }
-    }
-
-    @Override
-    public int insert(Employe employe) throws SauvegardeImpossible {
-        try {
-            PreparedStatement instruction;
-            instruction = connection.prepareStatement(
-                    "INSERT INTO UTILISATEUR (nomUtil, prenomUtil, mailUtil, passwordUtil, date_arrivee, date_depart, idType, numLigue) "
-                            +
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    Statement.RETURN_GENERATED_KEYS);
-            instruction.setString(1, employe.getNom()); // nomUtil
-            instruction.setString(2, employe.getPrenom()); // prenomUtil
-            instruction.setString(3, employe.getMail()); // mailUtil
-            instruction.setString(4, employe.checkPassword(employe.getMail()) ? employe.getMail() : employe.getMail()); // passwordUtil
-                                                                                                                        // (à
-                                                                                                                        // modifier
-                                                                                                                        // si
-                                                                                                                        // besoin)
-            instruction.setDate(5,
-                    employe.getDateArrivee() != null ? new java.sql.Date(employe.getDateArrivee().getTime()) : null); // date_arrivee
-            instruction.setDate(6,
-                    employe.getDateDepart() != null ? new java.sql.Date(employe.getDateDepart().getTime()) : null); // date_depart
-            instruction.setInt(7, employe.getType() != null ? employe.getType().getId() : null); // idType
-            instruction.setInt(8, employe.getLigue() != null ? employe.getLigue().getId() : null); // numLigue
-
-            instruction.executeUpdate();
-
-            ResultSet id = instruction.getGeneratedKeys();
-            id.next();
-            return id.getInt(1);
-        } catch (SQLException exception) {
-            exception.printStackTrace();
-            throw new SauvegardeImpossible(exception);
-        }
-    }
-
-    @Override
-    public void update(Ligue ligue) throws SauvegardeImpossible {
-        try {
-
-            String query = "UPDATE ligue SET nom = ? WHERE numLigue = ?";
-            PreparedStatement instruction = connection.prepareStatement(query);
-
-            instruction.setString(1, ligue.getNom());
-            instruction.setInt(2, ligue.getId());
-
-            int rowsAffected = instruction.executeUpdate();
-
-            if (rowsAffected == 0) {
-                throw new SauvegardeImpossible("Aucune ligue trouvée à mettre à jour.");
-            }
-        } catch (SQLException exception) {
-
-            exception.printStackTrace();
-            throw new SauvegardeImpossible(exception);
-        }
-    }
-
-    @Override
-    public void update(Employe employe) throws SauvegardeImpossible {
-        try {
-            String requete = "UPDATE employe SET nom = ?, prenom = ?, mail = ?, password = ?, idLigue = ?, dateArrivee = ?, dateDepart = ? WHERE id = ?";
-            PreparedStatement instruction = connection.prepareStatement(requete);
-
-            instruction.setString(1, employe.getNom());
-            instruction.setString(2, employe.getPrenom());
-            instruction.setString(3, employe.getMail());
-            instruction.setString(4, employe.getPassword());
-            instruction.setInt(5, employe.getLigue() != null ? employe.getLigue().getId() : null);
-            instruction.setObject(6, employe.getDateArrivee()); // Utiliser setObject pour LocalDate
-            instruction.setObject(7, employe.getDateDepart());
-            instruction.setInt(8, employe.getId());
-
-            instruction.executeUpdate();
-        } catch (SQLException exception) {
-            exception.printStackTrace();
-            throw new SauvegardeImpossible(exception);
-        }
-    }
-
-    @Override
-    public void delete(Employe employe) throws SauvegardeImpossible {
-        try {
-            String requete = "DELETE FROM employe WHERE id = ?";
-            PreparedStatement instruction = connection.prepareStatement(requete);
-
-            instruction.setInt(1, employe.getId());
-
-            instruction.executeUpdate();
-        } catch (SQLException exception) {
-            exception.printStackTrace();
-            throw new SauvegardeImpossible(exception);
-        }
-    }
-
-    // changement d'admin dans la BDD
-    public void updateAdministrateur(Ligue ligue, Employe nouvelAdmin) throws SauvegardeImpossible {
-        try {
-            // Étape 1 : Désactiver l'ancien administrateur de la ligue
-            String resetAdminSQL = "UPDATE UTILISATEUR SET idType = 3 WHERE numLigue = ? AND idType = 2";
-            PreparedStatement resetAdminStmt = connection.prepareStatement(resetAdminSQL);
-            resetAdminStmt.setInt(1, ligue.getId());
-            resetAdminStmt.executeUpdate();
-
-            // Étape 2 : Nommer le nouvel administrateur
-            String updateAdminSQL = "UPDATE UTILISATEUR SET idType = 2 WHERE idUtilisateur = ?";
-            PreparedStatement updateAdminStmt = connection.prepareStatement(updateAdminSQL);
-            updateAdminStmt.setInt(1, nouvelAdmin.getId());
-            updateAdminStmt.executeUpdate();
-
-            // Étape 3 : Mettre à jour l'objet en mémoire
-            ligue.setAdministrateur(nouvelAdmin);
-        } catch (SQLException e) {
-            throw new SauvegardeImpossible(e);
-        }
-    }
+			// Ensuite, supprimer la ligue
+			PreparedStatement deleteLigue = connection.prepareStatement(
+				"DELETE FROM ligue WHERE numLigue = ?");
+			deleteLigue.setInt(1, ligue.getIdLigue());
+			deleteLigue.executeUpdate();
+		} 
+		catch (SQLException exception) 
+		{
+			exception.printStackTrace();
+			throw new SauvegardeImpossible(exception);
+		}
+	}
 }

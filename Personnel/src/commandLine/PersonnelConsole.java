@@ -1,9 +1,13 @@
 package commandLine;
 
+import java.util.ArrayList;
+
 import commandLineMenus.Action;
+import commandLineMenus.List;
 import commandLineMenus.Menu;
 import commandLineMenus.Option;
 import static commandLineMenus.rendering.examples.util.InOut.getString;
+import personnel.Employe;
 import personnel.GestionPersonnel;
 import personnel.SauvegardeImpossible;
 
@@ -22,7 +26,8 @@ public class PersonnelConsole
 	
 	public void start()
 	{
-		menuPrincipal().start();
+		Menu menu = menuPrincipal();
+		menu.start();
 	}
 	
 	private Menu menuPrincipal()
@@ -32,6 +37,36 @@ public class PersonnelConsole
 		menu.add(ligueConsole.menuLigues());
 		menu.add(menuQuitter());
 		return menu;
+	}
+
+	private Menu menuEmployes()
+	{
+		Menu menu = new Menu("Gérer les employés", "e"); // Shortcut "e" added
+		menu.add(selectionnerEmploye());
+		menu.addBack("q");
+		return menu;
+	}
+
+	private List<Employe> selectionnerEmploye()
+	{
+		return new List<>("Sélectionner un employé", "s",
+			() -> new ArrayList<>(gestionPersonnel.getRoot().getLigue().getEmployes()),
+			this::menuActionsEmploye
+		);
+	}
+
+	private Menu menuActionsEmploye(Employe employe)
+	{
+		Menu menu = new Menu("Actions pour " + employe.getNom());
+		menu.add(employeConsole.editerEmploye(employe));
+		menu.add(supprimerEmploye(employe));
+		menu.addBack("q");
+		return menu;
+	}
+
+	private Option supprimerEmploye(Employe employe)
+	{
+		return new Option("Supprimer l'employé", "d", () -> employe.remove());
 	}
 
 	private Menu menuQuitter()
